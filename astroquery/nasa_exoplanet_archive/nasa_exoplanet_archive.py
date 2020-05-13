@@ -168,5 +168,59 @@ class NasaExoplanetArchiveClass(object):
 
         return self._table
 
+    def get_confirmed_planets_table(self, table_path=None, all_columns=False,
+                                    cache=True, show_progress=True):
+        """
+        Download (and optionally cache) the NASA Exoplanet
+        table for all planets.
+
+        Parameters
+        ----------
+        cache : bool (optional)
+            Cache exoplanet table to local astropy cache? Default is `True`.
+        show_progress : bool (optional)
+            Show progress of exoplanet table download (if no cached copy is
+            available). Default is `True`.
+        table_path : str (optional)
+            Path to a local table file. Default `None` will trigger a
+            download of the table from the internet.
+        all_columns : bool (optional)
+            Return all available columns. The default returns only the
+            columns in the default category at the link above.
+
+        Returns
+        -------
+        table : `~astropy.table.QTable`
+            Table of one exoplanet's properties.
+        """
+        if self._table is not None:
+            return self._table
+
+        else:
+            if table_path is None:
+                exoplanets_url = EXOPLANETS_CSV_URL
+                if all_columns:
+                    exoplanets_url = EXOPLANETS_CSV_URL + '&select=*'
+
+                table_path = download_file(exoplanets_url, cache=cache,
+                                           show_progress=show_progress,
+                                           timeout=120)
+            exoplanets_table = ascii.read(table_path, fast_reader=False)
+
+            # Create sky coordinate mixin column
+            exoplanets_table['sky_coord'] = SkyCoord(ra=exoplanets_table['ra'] * u.deg,
+                                                     dec=exoplanets_table['dec'] * u.deg)
+
+            # Assign units to columns where possible
+            for col in exoplanets_table.colnames:
+                if col in self.param_units:
+                    # Check that unit is implemented in this version of astropy
+                    if hasattr(u, self.param_units[col]):
+                        exoplanets_table[col].unit = u.Unit(self.param_units[col])
+
+            self._table = QTable(exoplanets_table)
+
+        return self._table
+
 
 NasaExoplanetArchive = NasaExoplanetArchiveClass()

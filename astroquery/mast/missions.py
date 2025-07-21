@@ -66,7 +66,7 @@ class MastMissionsClass(MastQueryWithLogin):
         # Search attributes
         self._search_option_fields = ['limit', 'offset', 'sort_by', 'search_key', 'sort_desc', 'select_cols',
                                       'skip_count', 'user_fields']
-        self.mission = mission  # current mission
+        self.mission = mission.lower()  # current mission
         self.limit = 5000  # maximum number of results
         self.columns = dict()  # columns configuration for each mission
 
